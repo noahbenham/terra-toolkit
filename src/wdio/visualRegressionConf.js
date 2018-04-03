@@ -1,35 +1,53 @@
 import path from 'path';
 import { LocalCompare } from 'wdio-visual-regression-service/compare';
+import SERVICE_DEFAULTS from './services/_serviceDefaults';
+
+const DEFAULTS = SERVICE_DEFAULTS.terra;
 
 const testIdRegex = /\[([^)]+)\]/;
 
-function testName(parent, title) {
-  const matches = testIdRegex.exec(title);
-  const parentName = parent.replace(/[\s+.]/g, '_');
-  let name = title.trim().replace(/[\s+.]/g, '_');
+function createTestName(fullName) {
+  const matches = testIdRegex.exec(fullName);
+  let name = fullName.trim().replace(/[\s+.]/g, '_');
   if (matches) {
     name = matches[1];
   }
 
-  return `${parentName}[${name}]`;
+  return name;
 }
 
-function getScreenshotName(ref) {
+function getScreenshotName(context) {
+  const browserWidth = context.meta.viewport.width;
+  const browserHeight = context.meta.viewport.height;
+  const parentName = createTestName(context.test.parent);
+  const testName = createTestName(context.test.title);
+
+  return `${parentName}[${testName}].${browserWidth}x${browserHeight}.png`;
+}
+
+function getScreenshotPath(ref, context) {
+  const screenshotSetup = (global.browser.options.terra || {}).screenshotSetup || DEFAULTS.screenshotSetup;
+  const snapshotDir = screenshotSetup.snapshotDir || DEFAULTS.snapshotDir;
+  const refDir = screenshotSetup[`${ref}Dir`] || DEFAULTS[`${ref}Dir`];
+  const locale = global.browser.options.locale || SERVICE_DEFAULTS.locale;
+  const browserName = context.desiredCapabilities.browserName;
+  const testSuite = path.parse(context.test.file).name;
+
+  return path.join(snapshotDir, refDir, locale, browserName, testSuite);
+}
+
+function getScreenshotLocation(ref) {
   return (context) => {
-    const browserName = context.desiredCapabilities.browserName;
-    const browserWidth = context.meta.viewport.width;
-    const browserHeight = context.meta.viewport.height;
     const testPath = path.dirname(context.test.file);
-    const name = testName(context.test.parent, context.test.title);
-    return path.join(testPath, '__snapshots__', ref, browserName, `${name}.${browserWidth}x${browserHeight}.png`);
+    return path.join(testPath, getScreenshotPath(ref, context), getScreenshotName(context));
   };
 }
 
 module.exports = {
   compare: new LocalCompare({
-    referenceName: getScreenshotName('reference'),
-    screenshotName: getScreenshotName('screen'),
-    diffName: getScreenshotName('diff'),
+    referenceName: getScreenshotLocation('reference'),
+    screenshotName: getScreenshotLocation('screenshot'),
+    diffName: getScreenshotLocation('diff'),
     misMatchTolerance: 0.01,
   }),
   viewportChangePause: 100,

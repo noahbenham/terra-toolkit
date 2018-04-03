@@ -1,3 +1,6 @@
+import SERVICE_DEFAULTS from '../_serviceDefaults';
+
+const DEFAULT_SELECTOR = SERVICE_DEFAULTS.terra.selector;
 /**
 * Helper method to determine the screenshot tag name, the element selector, the viewport(s)
 * in which to take the screenshots, as well as the capture screenshot options to be passed
@@ -22,7 +25,7 @@ const determineScreenshotOptions = (...args) => {
   }
 
   // Check if custom selector should be used, otherwise use the global value.
-  const selector = options.selector || global.browser.options.terra.selector;
+  const selector = options.selector || (global.browser.options.terra || {}).selector || DEFAULT_SELECTOR;
 
   const compareOptions = {};
 

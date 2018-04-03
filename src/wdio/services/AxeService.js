@@ -1,6 +1,8 @@
 /* global browser, axe */
 import fs from 'fs';
+import SERVICE_DEFAULTS from './_serviceDefaults';
 
+const DEFAULTS = SERVICE_DEFAULTS.axe;
 let axeCoreSrc;
 
 /**
@@ -14,7 +16,7 @@ export default class AxeService {
       // Conditionally inject axe. This allows consumers to inject it themselves
       // in the test examples which would slightly speed up test runs.
       const axeConfig = {
-        inject: true,
+        ...DEFAULTS,
         ...(browser.options.axe || {}),
       };
       if (axeConfig.inject) {
