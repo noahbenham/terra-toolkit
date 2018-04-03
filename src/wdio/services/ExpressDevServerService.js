@@ -9,17 +9,19 @@ const DEFAULTS = SERVICE_DEFAULTS.expressDevServer;
 
 export default class ExpressDevServerService {
   async onPrepare(config) {
-    if (!config.webpackConfig) {
+    const webpackConfig = config.webpackConfig;
+
+    if (!webpackConfig) {
       // eslint-disable-next-line no-console
       console.log('[ExpresDevService] No webpack configuration provided');
       return;
     }
 
-    const webpackConfig = config.webpackConfig;
     const port = ((config || {}).expressDevServer || {}).port || DEFAULTS.port;
     const index = ((config || {}).expressDevServer || {}).index || DEFAULTS.index;
+    const locale = config.locale || SERVICE_DEFAULTS.locale;
 
-    await ExpressDevServerService.startExpressDevServer(webpackConfig, port, index).then((server) => {
+    await ExpressDevServerService.startExpressDevServer(webpackConfig, port, index, locale).then((server) => {
       this.server = server;
     });
   }
@@ -28,23 +30,35 @@ export default class ExpressDevServerService {
     await this.stop();
   }
 
-  static startExpressDevServer(webpackConfig, port, index) {
+  static startExpressDevServer(webpackConfig, port, index, locale) {
     return ExpressDevServerService.compile(webpackConfig).then((fs) => {
       const app = express();
-
+      const indexName = `/${index}`;
       // Setup a catch all route, we can't use 'static' because we need to use a virtual file system
       app.get('*', (req, res, next) => {
         let filename = req.url;
         // Setup a default index for the server.
         if (filename === '/') {
-          filename = `/${index}`;
+          filename = indexName;
         }
 
         const filepath = `${webpackConfig.output.path}${filename}`;
 
         if (fs.existsSync(filepath)) {
           res.setHeader('content-type', mime.contentType(path.extname(filename)));
-          res.send(fs.readFileSync(filepath));
+
+          let fileContent = fs.readFileSync(filepath, 'utf8');
+          if (filename === indexName) {
+            const langPattern = /lang="[a-zA-Z0-9-]*"/;
+            const isLanguageSet = fileContent.match(langPattern);
+            if (isLanguageSet) {
+              fileContent = fileContent.replace(langPattern, `lang="${locale}"`);
+            } else {
+              fileContent = fileContent.replace(/<html/, `<html lang="${locale}"`);
+            }
+          }
+
+          res.send(fileContent);
         } else if (filename === '/favicon.ico') {
           res.sendStatus(200);
         } else {
@@ -100,7 +114,7 @@ export default class ExpressDevServerService {
   stop() {
     return new Promise((resolve) => {
       // eslint-disable-next-line no-console
-      console.log('[ExpresDevService] Closing WebpackDevServer');
+      console.log('[ExpresDevService] Closing Express server');
       if (this.server) {
         this.server.close();
         this.server = null;

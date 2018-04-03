@@ -42,5 +42,10 @@ module.exports = {
       chunks: ['index'],
       filename: './inaccessible-text.html',
     }),
+    new HtmlWebpackPlugin({
+      template: path.join(__dirname, 'fixtures', 'index.html'),
+      chunks: ['index'],
+      filename: './i18n.html',
+    }),
   ],
 };
