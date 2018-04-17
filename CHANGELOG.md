@@ -6,6 +6,9 @@ Unreleased
 ### Added
 * Added nl and nl-BE to supported locales
 
+### Changed
+* Enhance the default visual regression configuration
+
 2.11.0 - (April 11, 2018)
 ----------
 ### Added
