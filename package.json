@@ -44,7 +44,10 @@
     "release:minor": "node scripts/release/release.js minor",
     "release:patch": "node scripts/release/release.js patch",
     "test": "npm run jest && npm run compile && npm run nightwatch && npm run nightwatch:port-provided && wdio wdio.conf.js",
-    "wdio": "wdio wdio.conf.js"
+    "wdio": "npm run wdio-all && npm run wdio-i18n && npm run wdio-i18n-es",
+    "wdio-all": "wdio",
+    "wdio-i18n": "wdio --spec tests/wdio/i18n-spec.js",
+    "wdio-i18n-es": "LOCALE=es wdio --spec tests/wdio/i18n-spec.js"
   },
   "dependencies": {
     "async": "^2.5.0",

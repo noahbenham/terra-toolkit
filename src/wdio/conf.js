@@ -4,6 +4,9 @@ const SeleniumDockerService = require('./services').SeleniumDocker;
 const visualRegressionConfig = require('./visualRegressionConf');
 const path = require('path');
 
+const envLocale = process.env.LOCALE;
+const locale = envLocale || 'en';
+
 exports.config = {
   specs: [path.join('.', 'tests', 'wdio', '**', '*-spec.js')],
   maxInstances: 1,
@@ -24,6 +27,8 @@ exports.config = {
   services: ['visual-regression', AxeService, TerraService, SeleniumDockerService],
 
   visualRegression: visualRegressionConfig,
+
+  locale,
 
   terra: {
     selector: '[data-reactroot]',

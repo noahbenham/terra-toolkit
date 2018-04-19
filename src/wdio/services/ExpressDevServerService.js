@@ -6,17 +6,19 @@ import path from 'path';
 
 export default class ExpressDevServerService {
   async onPrepare(config) {
-    if (!config.webpackConfig) {
+    const webpackConfig = config.webpackConfig;
+
+    if (!webpackConfig) {
       // eslint-disable-next-line no-console
       console.log('[ExpressDevService] No webpack configuration provided');
       return;
     }
 
-    const webpackConfig = config.webpackConfig;
     const port = ((config || {}).expressDevServer || {}).port || 8080;
     const index = ((config || {}).expressDevServer || {}).index || 'index.html';
+    const locale = (config || {}).locale || 'en';
 
-    await ExpressDevServerService.startExpressDevServer(webpackConfig, port, index).then((server) => {
+    await ExpressDevServerService.startExpressDevServer(webpackConfig, port, index, locale).then((server) => {
       this.server = server;
     });
   }
@@ -25,25 +27,42 @@ export default class ExpressDevServerService {
     await this.stop();
   }
 
-  static startExpressDevServer(webpackConfig, port, index) {
+  static startExpressDevServer(webpackConfig, port, index, locale) {
     return ExpressDevServerService.compile(webpackConfig).then((fs) => {
       const app = express();
 
       // Setup a catch all route, we can't use 'static' because we need to use a virtual file system
       app.get('*', (req, res, next) => {
         let filename = req.url;
+
         // Setup a default index for the server.
         if (filename === '/') {
           filename = `/${index}`;
+        } else if (filename === '/favicon.ico') {
+          res.sendStatus(200);
+          return;
         }
 
         const filepath = `${webpackConfig.output.path}${filename}`;
 
         if (fs.existsSync(filepath)) {
           res.setHeader('content-type', mime.contentType(path.extname(filename)));
-          res.send(fs.readFileSync(filepath));
-        } else if (filename === '/favicon.ico') {
-          res.sendStatus(200);
+
+          let fileContent = fs.readFileSync(filepath, 'utf8');
+
+          const langPattern = /lang="[a-zA-Z0-9-]*"/;
+          const langLocale = `lang="${locale}"`;
+
+          const isLanguageSet = fileContent.match(langPattern);
+
+          // Set the test locale for the file
+          if (isLanguageSet) {
+            fileContent = fileContent.replace(langPattern, langLocale);
+          } else {
+            fileContent = fileContent.replace(/<html/, `<html ${langLocale}`);
+          }
+
+          res.send(fileContent);
         } else {
           next();
         }
