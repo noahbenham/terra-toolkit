@@ -32,9 +32,11 @@ function getScreenshotPath(ref, context) {
   const refDir = screenshotSetup[`${ref}Dir`];
   const locale = 'en';
   const browserName = context.desiredCapabilities.browserName;
+  const formFactor = global.browser.options.formFactor;
+  const testForm = formFactor ? `${browserName}_${formFactor}` : browserName;
   const testSuite = path.parse(context.test.file).name;
 
-  return path.join(refDir, locale, browserName, testSuite);
+  return path.join(refDir, locale, testForm, testSuite);
 }
 
 function getScreenshot(ref) {
