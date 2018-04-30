@@ -9,6 +9,15 @@ const screenshotSetup = {
   screenshotDir: 'latest',
 };
 
+const viewports = {
+  tiny: { width: 470, height: 768, name: 'tiny' },
+  small: { width: 622, height: 768, name: 'small' },
+  medium: { width: 838, height: 768, name: 'medium' },
+  large: { width: 1000, height: 768, name: 'large' },
+  huge: { width: 1300, height: 768, name: 'huge' },
+  enormous: { width: 1500, height: 768, name: 'enormous' },
+};
+
 function createTestName(fullName) {
   const matches = testIdRegex.exec(fullName);
   let name = fullName.trim().replace(/[\s+.]/g, '_');
@@ -20,20 +29,37 @@ function createTestName(fullName) {
 }
 
 function getScreenshotName(context) {
-  const browserWidth = context.meta.viewport.width;
-  const browserHeight = context.meta.viewport.height;
   const parentName = createTestName(context.test.parent);
   const testName = createTestName(context.test.title);
 
-  return `${parentName}[${testName}].${browserWidth}x${browserHeight}.png`;
+  return `${parentName}[${testName}].png`;
 }
+
+function getFormFactor(context) {
+  let formFactor = global.browser.options.formFactor;
+
+  if (!formFactor) {
+    const browserWidth = context.meta.viewport.width;
+    const viewportSizes = Object.keys(viewports);
+    for (let i = 0; i < viewportSizes.length; i += 1) {
+      const viewport = viewportSizes[i];
+      if (browserWidth <= viewports[viewport].width) {
+        formFactor = viewports[viewport].name;
+        break;
+      }
+    }
+  }
+
+  return formFactor;
+}
+
 
 function getScreenshotPath(ref, context) {
   const refDir = screenshotSetup[`${ref}Dir`];
-  const locale = 'en';
+  const locale = global.browser.options.locale;
   const browserName = context.desiredCapabilities.browserName;
-  const formFactor = global.browser.options.formFactor;
-  const testForm = formFactor ? `${browserName}_${formFactor}` : browserName;
+  const formFactor = getFormFactor(context);
+  const testForm = `${browserName}_${formFactor}`;
   const testSuite = path.parse(context.test.file).name;
 
   return path.join(refDir, locale, testForm, testSuite);
