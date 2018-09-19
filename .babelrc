@@ -1,9 +1,19 @@
 {
-  "presets": [[
-    "env", {
-      "targets": {
-        "browsers": [ "extends browserslist-config-terra" ]
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "targets": {
+          "browsers": [
+            "extends browserslist-config-terra"
+          ]
+        }
       }
-    }]],
-  "plugins": ["transform-object-assign", "transform-object-rest-spread", "transform-runtime"],
+    ]
+  ],
+  "plugins": [
+    "@babel/plugin-transform-object-assign",
+    "@babel/plugin-proposal-object-rest-spread",
+    "@babel/plugin-transform-runtime"
+  ]
 }
